@@ -109,7 +109,7 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
         </button>
         <button
           type="button"
-          onClick={() => exportPDF(filtered, filterLabel)}
+          onClick={() => exportPDF(filtered, filterLabel, { vehicle: vehicleFilter, dateFrom, dateTo })}
           disabled={filtered.length === 0}
           className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2.5 rounded-xl border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >

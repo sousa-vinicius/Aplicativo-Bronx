@@ -5,26 +5,50 @@ function two(n: number) {
   return String(n).padStart(2, "0")
 }
 
+// Formata um timestamp completo (com hora) para dd-mm-aa
 function shortDate(iso: string) {
   const d = new Date(iso)
   return `${two(d.getDate())}-${two(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)}`
 }
 
-// Monta o nome do arquivo: "Gestao de Frota - <Modelo ou FROTA> - <data ou periodo>"
-function buildReportFilename(records: FleetRecord[]) {
-  const vehicles = Array.from(new Set(records.map((r) => r.vehicle)))
-  const vehiclePart = vehicles.length === 1
-    ? vehicles[0].replace(/[\\/:*?"<>|]/g, "-")
-    : "FROTA"
+// Formata uma data "pura" (sem hora), no formato do <input type="date">, ex: "2026-01-01" → "01-01-26"
+function shortDateFromInput(isoDate: string) {
+  const [y, m, d] = isoDate.split("-")
+  return `${d}-${m}-${y.slice(-2)}`
+}
 
-  if (records.length === 0) {
-    return `Gestao de Frota - ${vehiclePart} - ${shortDate(new Date().toISOString())}`
+export interface ReportFilters {
+  vehicle?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+// Monta o nome do arquivo: "Gestao de Frota - <Modelo ou FROTA> - <data ou periodo>"
+// Usa os valores do filtro (De/Até e Veículo) quando informados — eles têm prioridade
+// sobre o período real dos registros, para o nome bater exatamente com o que foi filtrado.
+function buildReportFilename(records: FleetRecord[], filters: ReportFilters = {}) {
+  const uniqueVehicles = Array.from(new Set(records.map((r) => r.vehicle)))
+  const vehiclePart = (filters.vehicle || (uniqueVehicles.length === 1 ? uniqueVehicles[0] : "FROTA"))
+    .replace(/[\\/:*?"<>|]/g, "-")
+
+  let startPart: string
+  let endPart: string
+
+  if (filters.dateFrom || filters.dateTo) {
+    startPart = filters.dateFrom ? shortDateFromInput(filters.dateFrom) : ""
+    endPart = filters.dateTo ? shortDateFromInput(filters.dateTo) : ""
+  } else if (records.length > 0) {
+    const times = records.map((r) => new Date(r.departureTime).getTime())
+    startPart = shortDate(new Date(Math.min(...times)).toISOString())
+    endPart = shortDate(new Date(Math.max(...times)).toISOString())
+  } else {
+    startPart = endPart = shortDate(new Date().toISOString())
   }
 
-  const times = records.map((r) => new Date(r.departureTime).getTime())
-  const minDate = shortDate(new Date(Math.min(...times)).toISOString())
-  const maxDate = shortDate(new Date(Math.max(...times)).toISOString())
-  const datePart = minDate === maxDate ? minDate : `${minDate} a ${maxDate}`
+  const datePart =
+    startPart && endPart
+      ? (startPart === endPart ? startPart : `${startPart} a ${endPart}`)
+      : (startPart || endPart)
 
   return `Gestao de Frota - ${vehiclePart} - ${datePart}`
 }
@@ -56,9 +80,9 @@ export function exportCSV(records: FleetRecord[]) {
   downloadBlob(`historico-frotas-${stamp}.csv`, "\uFEFF" + csv, "text/csv;charset=utf-8")
 }
 
-export function exportPDF(records: FleetRecord[], filterLabel: string) {
+export function exportPDF(records: FleetRecord[], filterLabel: string, filters: ReportFilters = {}) {
   const stamp = new Date().toLocaleString("pt-BR")
-  const filename = buildReportFilename(records)
+  const filename = buildReportFilename(records, filters)
 
   const thumbs = (photos: string[] | undefined) =>
     photos && photos.length > 0
