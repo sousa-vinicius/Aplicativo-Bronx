@@ -1,6 +1,34 @@
 import type { FleetRecord } from "../types"
 import { fmt, csvEscape, downloadBlob } from "../utils"
 
+function two(n: number) {
+  return String(n).padStart(2, "0")
+}
+
+function shortDate(iso: string) {
+  const d = new Date(iso)
+  return `${two(d.getDate())}-${two(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)}`
+}
+
+// Monta o nome do arquivo: "Gestao de Frota - <Modelo ou FROTA> - <data ou periodo>"
+function buildReportFilename(records: FleetRecord[]) {
+  const vehicles = Array.from(new Set(records.map((r) => r.vehicle)))
+  const vehiclePart = vehicles.length === 1
+    ? vehicles[0].replace(/[\\/:*?"<>|]/g, "-")
+    : "FROTA"
+
+  if (records.length === 0) {
+    return `Gestao de Frota - ${vehiclePart} - ${shortDate(new Date().toISOString())}`
+  }
+
+  const times = records.map((r) => new Date(r.departureTime).getTime())
+  const minDate = shortDate(new Date(Math.min(...times)).toISOString())
+  const maxDate = shortDate(new Date(Math.max(...times)).toISOString())
+  const datePart = minDate === maxDate ? minDate : `${minDate} a ${maxDate}`
+
+  return `Gestao de Frota - ${vehiclePart} - ${datePart}`
+}
+
 export function exportCSV(records: FleetRecord[]) {
   const headers = [
     "Veículo", "Status",
@@ -30,6 +58,7 @@ export function exportCSV(records: FleetRecord[]) {
 
 export function exportPDF(records: FleetRecord[], filterLabel: string) {
   const stamp = new Date().toLocaleString("pt-BR")
+  const filename = buildReportFilename(records)
 
   const thumbs = (photos: string[] | undefined) =>
     photos && photos.length > 0
@@ -51,7 +80,7 @@ export function exportPDF(records: FleetRecord[], filterLabel: string) {
   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR"><head><meta charset="utf-8" />
-    <title>Relatório de Frotas</title>
+    <title>${filename}</title>
     <style>
       * { box-sizing: border-box; }
       body { font-family: Arial, Helvetica, sans-serif; color: #1e293b; padding: 32px; }
