@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react"
+import { useRef, useCallback, useState } from "react"
 import type { Condition } from "../types"
 import { CONDITIONS, CONDITION_STYLE } from "../constants"
 
@@ -52,6 +52,7 @@ export function Field({ label, required, children }: { label: string; required?:
 
 export function PhotoCapture({ label, photos, onChange }: { label: string; photos: string[]; onChange: (p: string[]) => void }) {
   const ref = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
 
   const onFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +72,9 @@ export function PhotoCapture({ label, photos, onChange }: { label: string; photo
       <div className="flex flex-wrap gap-2">
         {photos.map((src, i) => (
           <div key={i} className="relative">
-            <img src={src} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
+            <button type="button" onClick={() => setPreview(src)}>
+              <img src={src} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
+            </button>
             <button
               type="button"
               onClick={() => onChange(photos.filter((_, j) => j !== i))}
@@ -93,6 +96,33 @@ export function PhotoCapture({ label, photos, onChange }: { label: string; photo
         </button>
       </div>
       <input ref={ref} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={onFile} />
+      <Lightbox src={preview} onClose={() => setPreview(null)} />
+    </div>
+  )
+}
+
+export function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+  if (!src) return null
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <img
+        src={src}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full object-contain rounded-lg"
+      />
     </div>
   )
 }
