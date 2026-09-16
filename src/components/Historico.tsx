@@ -2,7 +2,7 @@ import { useState } from "react"
 import type { FleetRecord } from "../types"
 import { fmt } from "../utils"
 import { exportCSV, exportPDF } from "../lib/frotaExport"
-import { BackBtn, CondBadge, FuelPip, inputCls } from "./ui"
+import { BackBtn, CondBadge, FuelPip, inputCls, Lightbox } from "./ui"
 
 export function Historico({ records, onBack }: { records: FleetRecord[]; onBack: () => void }) {
   const [q, setQ] = useState("")
@@ -10,6 +10,7 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
 
   const vehicleOptions = Array.from(new Set(records.map((r) => r.vehicle))).sort()
 
@@ -108,7 +109,7 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
         </button>
         <button
           type="button"
-          onClick={() => exportPDF(filtered, filterLabel)}
+          onClick={() => exportPDF(filtered, filterLabel, { vehicle: vehicleFilter, dateFrom, dateTo })}
           disabled={filtered.length === 0}
           className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold px-3 py-2.5 rounded-xl border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -176,9 +177,9 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Fotos da saída</span>
                       <div className="flex gap-2 flex-wrap">
                         {rec.checkoutPhotos.map((p, i) => (
-                          <a key={i} href={p} target="_blank" rel="noreferrer">
+                          <button key={i} type="button" onClick={() => setPreview(p)}>
                             <img src={p} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -208,9 +209,9 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Fotos da devolução</span>
                           <div className="flex gap-2 flex-wrap">
                             {rec.returnPhotos.map((p, i) => (
-                              <a key={i} href={p} target="_blank" rel="noreferrer">
+                              <button key={i} type="button" onClick={() => setPreview(p)}>
                                 <img src={p} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
-                              </a>
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -226,6 +227,7 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
           <p className="text-center text-slate-400 text-sm py-10">Nenhum registro encontrado.</p>
         )}
       </div>
+      <Lightbox src={preview} onClose={() => setPreview(null)} />
     </div>
   )
 }

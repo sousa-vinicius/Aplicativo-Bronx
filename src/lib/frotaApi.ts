@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient"
 import type { FleetRecord } from "../types"
+import { localToISO } from "../utils"
 
 // Banco usa snake_case; o app usa camelCase. Estas funções convertem nos dois sentidos.
 
@@ -42,7 +43,7 @@ export async function insertFrotaSaida(
     .insert({
       vehicle: data.vehicle,
       driver: data.driver,
-      departure_time: data.departureTime,
+      departure_time: localToISO(data.departureTime),
       condition: data.condition,
       fuel_level: data.fuelLevel,
       route: data.route,
@@ -64,7 +65,7 @@ export async function updateFrotaDevolucao(
     .from("frota_registros")
     .update({
       return_driver: data.returnDriver,
-      return_time: data.returnTime,
+      return_time: localToISO(data.returnTime),
       return_condition: data.returnCondition,
       return_fuel_level: data.returnFuelLevel,
       return_route: data.returnRoute,

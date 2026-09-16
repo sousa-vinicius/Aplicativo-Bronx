@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react"
+import { useRef, useCallback, useState, useEffect } from "react"
 import type { Condition } from "../types"
 import { CONDITIONS, CONDITION_STYLE } from "../constants"
 
@@ -50,17 +50,84 @@ export function Field({ label, required, children }: { label: string; required?:
   )
 }
 
+export function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+  if (!src) return null
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <img
+        src={src}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-full max-h-full object-contain rounded-lg"
+      />
+    </div>
+  )
+}
+
+// Redimensiona e comprime a imagem antes de transformar em base64, para não sobrecarregar
+// o banco de dados com fotos de câmera em tamanho original (que podem passar de 5MB cada).
+function compressImage(file: File, maxDim = 1280, quality = 0.72): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const raw = ev.target?.result as string
+      const img = new Image()
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width)
+            width = maxDim
+          } else {
+            width = Math.round((width * maxDim) / height)
+            height = maxDim
+          }
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) { resolve(raw); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL("image/jpeg", quality))
+      }
+      img.onerror = () => resolve(raw)
+      img.src = raw
+    }
+    reader.onerror = () => resolve("")
+    reader.readAsDataURL(file)
+  })
+}
+
 export function PhotoCapture({ label, photos, onChange }: { label: string; photos: string[]; onChange: (p: string[]) => void }) {
   const ref = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
 
   const onFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      Array.from(e.target.files || []).forEach((file) => {
-        const reader = new FileReader()
-        reader.onload = (ev) => onChange([...photos, ev.target?.result as string])
-        reader.readAsDataURL(file)
-      })
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || [])
       if (ref.current) ref.current.value = ""
+      if (files.length === 0) return
+      setProcessing(true)
+      try {
+        const compressed = await Promise.all(files.map((f) => compressImage(f)))
+        onChange([...photos, ...compressed.filter(Boolean)])
+      } finally {
+        setProcessing(false)
+      }
     },
     [photos, onChange],
   )
@@ -71,7 +138,9 @@ export function PhotoCapture({ label, photos, onChange }: { label: string; photo
       <div className="flex flex-wrap gap-2">
         {photos.map((src, i) => (
           <div key={i} className="relative">
-            <img src={src} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
+            <button type="button" onClick={() => setPreview(src)}>
+              <img src={src} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
+            </button>
             <button
               type="button"
               onClick={() => onChange(photos.filter((_, j) => j !== i))}
@@ -82,17 +151,86 @@ export function PhotoCapture({ label, photos, onChange }: { label: string; photo
         <button
           type="button"
           onClick={() => ref.current?.click()}
-          className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:border-amber-400 hover:text-amber-500 transition-colors"
+          disabled={processing}
+          className="w-20 h-20 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:border-amber-400 hover:text-amber-500 transition-colors disabled:opacity-50"
         >
-          <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span className="text-xs font-medium">Foto</span>
+          {processing ? (
+            <span className="text-xs font-medium">...</span>
+          ) : (
+            <>
+              <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-xs font-medium">Foto</span>
+            </>
+          )}
         </button>
       </div>
       <input ref={ref} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={onFile} />
+      <Lightbox src={preview} onClose={() => setPreview(null)} />
+    </div>
+  )
+}
+
+export function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  placeholder?: string
+}) {
+  const [query, setQuery] = useState(value)
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setQuery(value) }, [value])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
+
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()))
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); onChange(""); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder ?? "Buscar..."}
+        className={inputCls}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg">
+          {filtered.map((o) => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => { onChange(o); setQuery(o); setOpen(false) }}
+              className="w-full text-left px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+      {open && query && filtered.length === 0 && (
+        <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg px-3.5 py-2.5 text-sm text-slate-400">
+          Nenhuma opção encontrada
+        </div>
+      )}
     </div>
   )
 }

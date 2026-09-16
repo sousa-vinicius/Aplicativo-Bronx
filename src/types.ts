@@ -21,3 +21,21 @@ export interface FleetRecord {
   returnPhotos?: string[]
   status: RecordStatus
 }
+
+// ─── Solicitação GLP ─────────────────────────────────────────────────────────
+
+export type GlpView = "home" | "nova" | "historico"
+
+export interface GlpRecord {
+  id: string
+  solicitante: string
+  data: string
+  fornecedor: string
+  quantidade: number
+  etapaServico: string
+  obra: string
+  observacao: string
+  createdAt: string
+  recebido: boolean
+  movimentado: boolean
+}

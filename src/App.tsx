@@ -1,7 +1,9 @@
-import { useState } from "react"
-import Frotas from "./Frotas"
+import { useState, lazy, Suspense } from "react"
 
-type Sector = "frotas"
+const Frotas = lazy(() => import("./Frotas"))
+const Glp = lazy(() => import("./Glp"))
+
+type Sector = "frotas" | "glp"
 
 function IconFrotas() {
   return (
@@ -17,23 +19,48 @@ function IconFrotas() {
   )
 }
 
-const SECTOR = {
-  id: "frotas" as Sector,
-  label: "Frotas",
-  sublabel: "Gestão de Veículos",
-  description: "Controle de retiradas, devoluções, condição dos veículos e histórico de uso da frota.",
-  accent: "text-amber-400",
-  accentText: "text-amber-400",
-  iconBg: "text-amber-400",
-  icon: <IconFrotas />,
-  tag: "VEÍCULOS",
+function IconGlp() {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className="w-full h-full">
+      <path d="M20 6c4 6-6 8-4 14a6 6 0 1010-2c-2 3-4 1-3-2 1-4-1-8-3-10z"
+        stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  )
 }
+
+const SECTORS = [
+  {
+    id: "frotas" as Sector,
+    label: "Frotas",
+    sublabel: "Gestão de Veículos",
+    description: "Controle de retiradas, devoluções, condição dos veículos e histórico de uso da frota.",
+    accent: "text-amber-400",
+    icon: <IconFrotas />,
+    tag: "VEÍCULOS",
+  },
+  {
+    id: "glp" as Sector,
+    label: "Solicitação GLP",
+    sublabel: "Gás Liquefeito de Petróleo",
+    description: "Registro de solicitações de gás por obra, fornecedor, quantidade e etapa do serviço.",
+    accent: "text-orange-400",
+    icon: <IconGlp />,
+    tag: "GLP",
+  },
+]
 
 export default function App() {
   const [active, setActive] = useState<Sector | null>(null)
   const [pressed, setPressed] = useState<Sector | null>(null)
 
-  if (active === "frotas") return <Frotas onBack={() => setActive(null)} />
+  if (active === "frotas" || active === "glp") {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400 text-sm">Carregando...</div>}>
+        {active === "frotas" && <Frotas onBack={() => setActive(null)} />}
+        {active === "glp" && <Glp onBack={() => setActive(null)} />}
+      </Suspense>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -68,59 +95,56 @@ export default function App() {
       {/* Cards */}
       <main className="flex-1 px-5 md:px-10 pb-10">
         <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3">
-          <button
-            key={SECTOR.id}
-            onClick={() => setActive(SECTOR.id)}
-            onPointerDown={() => setPressed(SECTOR.id)}
-            onPointerUp={() => setPressed(null)}
-            onPointerLeave={() => setPressed(null)}
-            className={`
-              group relative w-full text-left rounded-2xl border bg-white
-              transition-all duration-150 overflow-hidden
-              ${pressed === SECTOR.id ? "scale-[0.98]" : "hover:shadow-md"}
-              border-slate-200 hover:border-slate-300
-            `}
-          >
-            {/* Top strip accent */}
-            <div
-              className={`absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${SECTOR.accent.replace("text-", "bg-")}`}
-            />
+          {SECTORS.map((sector) => (
+            <button
+              key={sector.id}
+              onClick={() => setActive(sector.id)}
+              onPointerDown={() => setPressed(sector.id)}
+              onPointerUp={() => setPressed(null)}
+              onPointerLeave={() => setPressed(null)}
+              className={`
+                group relative w-full text-left rounded-2xl border bg-white
+                transition-all duration-150 overflow-hidden
+                ${pressed === sector.id ? "scale-[0.98]" : "hover:shadow-md"}
+                border-slate-200 hover:border-slate-300
+              `}
+            >
+              <div
+                className={`absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${sector.accent.replace("text-", "bg-")}`}
+              />
 
-            <div className="p-5">
-              {/* Tag + icon row */}
-              <div className="flex items-start justify-between mb-4">
-                <span
-                  className={`text-xs font-bold tracking-widest ${SECTOR.accentText}`}
-                  style={{ fontFamily: "var(--font-mono)" }}
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <span
+                    className={`text-xs font-bold tracking-widest ${sector.accent}`}
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
+                    {sector.tag}
+                  </span>
+                  <div className={`w-8 h-8 flex-shrink-0 ${sector.accent} opacity-70 group-hover:opacity-100 transition-opacity`}>
+                    {sector.icon}
+                  </div>
+                </div>
+
+                <h2
+                  className="text-lg font-bold text-slate-900 leading-snug mb-1"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {SECTOR.tag}
-                </span>
-                <div className={`w-8 h-8 flex-shrink-0 ${SECTOR.iconBg} opacity-70 group-hover:opacity-100 transition-opacity`}>
-                  {SECTOR.icon}
+                  {sector.label}
+                </h2>
+                <p className="text-xs text-slate-400 mb-3 font-medium">{sector.sublabel}</p>
+
+                <p className="text-sm text-slate-500 leading-relaxed">{sector.description}</p>
+
+                <div className={`mt-4 flex items-center gap-1.5 text-xs font-semibold ${sector.accent} opacity-0 group-hover:opacity-100 transition-all duration-200`}>
+                  Acessar
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
               </div>
-
-              {/* Label */}
-              <h2
-                className="text-lg font-bold text-slate-900 leading-snug mb-1"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {SECTOR.label}
-              </h2>
-              <p className="text-xs text-slate-400 mb-3 font-medium">{SECTOR.sublabel}</p>
-
-              {/* Description */}
-              <p className="text-sm text-slate-500 leading-relaxed">{SECTOR.description}</p>
-
-              {/* Arrow */}
-              <div className={`mt-4 flex items-center gap-1.5 text-xs font-semibold ${SECTOR.accentText} opacity-0 group-hover:opacity-100 transition-all duration-200`}>
-                Acessar
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          </button>
+            </button>
+          ))}
         </div>
       </main>
 
