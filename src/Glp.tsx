@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import type { GlpRecord, GlpView } from "./types"
-import { fetchGlpRecords, insertGlpSolicitacao, updateGlpStatus } from "./lib/glpApi"
+import { fetchGlpRecords, insertGlpSolicitacao, updateGlpStatus, deleteGlpSolicitacao } from "./lib/glpApi"
 import { GlpHome } from "./components/GlpHome"
 import { GlpForm } from "./components/GlpForm"
 import { GlpHistorico } from "./components/GlpHistorico"
@@ -49,6 +49,15 @@ export default function Glp({ onBack }: { onBack: () => void }) {
       setRecords((prev) => prev.map((r) => (r.id === id ? updated : r)))
     } catch (err: any) {
       setError(err.message ?? "Erro ao atualizar status")
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteGlpSolicitacao(id)
+      setRecords((prev) => prev.filter((r) => r.id !== id))
+    } catch (err: any) {
+      setError(err.message ?? "Erro ao excluir solicitação")
     }
   }
 
@@ -101,7 +110,7 @@ export default function Glp({ onBack }: { onBack: () => void }) {
             <GlpForm onSubmit={handleNova} onBack={() => setView("home")} />
           )}
           {view === "historico" && (
-            <GlpHistorico records={records} onStatusChange={handleStatusChange} onBack={() => setView("home")} />
+            <GlpHistorico records={records} onStatusChange={handleStatusChange} onDelete={handleDelete} onBack={() => setView("home")} />
           )}
         </>
       )}

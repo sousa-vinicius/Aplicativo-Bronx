@@ -66,3 +66,11 @@ export async function updateGlpStatus(
   if (error) throw error
   return fromDb(row)
 }
+
+export async function deleteGlpSolicitacao(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("glp_solicitacoes")
+    .delete()
+    .eq("id", id)
+  if (error) throw error
+}

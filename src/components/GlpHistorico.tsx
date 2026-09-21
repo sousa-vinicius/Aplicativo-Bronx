@@ -7,10 +7,12 @@ import { BackBtn, inputCls } from "./ui"
 export function GlpHistorico({
   records,
   onStatusChange,
+  onDelete,
   onBack,
 }: {
   records: GlpRecord[]
   onStatusChange: (id: string, data: Partial<{ recebido: boolean; movimentado: boolean }>) => void
+  onDelete: (id: string) => void
   onBack: () => void
 }) {
   const [q, setQ] = useState("")
@@ -185,6 +187,23 @@ export function GlpHistorico({
                       />
                       Movimentado
                     </label>
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`Excluir a solicitação de ${r.solicitante} (${r.fornecedor}, ${fmt(r.data)})? Essa ação não pode ser desfeita.`)) {
+                          onDelete(r.id)
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-500 border border-red-200 rounded-xl py-2.5 hover:bg-red-50 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Excluir solicitação
+                    </button>
                   </div>
                 </div>
               )}
