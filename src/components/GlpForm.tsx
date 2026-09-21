@@ -21,7 +21,8 @@ export function GlpForm({
   const [solicitante, setSolicitante] = useState("")
   const [data, setData]               = useState(nowLocal)
   const [fornecedor, setFornecedor]   = useState("")
-  const [quantidade, setQuantidade]   = useState(1)
+  const [quantidadeStr, setQuantidadeStr] = useState("1")
+  const quantidade = Number(quantidadeStr) || 0
   const [etapaServico, setEtapa]      = useState("")
   const [obra, setObra]               = useState("")
   const [observacao, setObs]          = useState("")
@@ -86,10 +87,16 @@ export function GlpForm({
           <input
             required
             type="number"
+            inputMode="numeric"
+            pattern="[0-9]*"
             min={1}
             step={1}
-            value={quantidade}
-            onChange={(e) => setQuantidade(Math.max(1, Number(e.target.value)))}
+            value={quantidadeStr}
+            onKeyDown={(e) => {
+              if (["e", "E", "+", "-", "."].includes(e.key)) e.preventDefault()
+            }}
+            onChange={(e) => setQuantidadeStr(e.target.value.replace(/\D/g, ""))}
+            onBlur={() => { if (!quantidadeStr || Number(quantidadeStr) < 1) setQuantidadeStr("1") }}
             placeholder="Ex: 2"
             className={inputCls}
             style={{ fontFamily: "var(--font-mono)" }}
