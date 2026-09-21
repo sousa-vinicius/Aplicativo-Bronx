@@ -5,7 +5,25 @@
   --font-mono: 'Courier New', monospace;
 }
 
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100%;
+}
+
+/* Cabeçalhos fixos (sticky) das telas de Frotas e GLP: quando o app roda
+   instalado em tela cheia (PWA), evita que o conteúdo fique embaixo da
+   barra de status/notch do celular. */
+.app-sticky-header {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+/* Elementos fixos na base da tela (ex: aviso "Salvando..."): evita ficar
+   embaixo da barra de gestos/home indicator do celular. */
+.app-fixed-bottom {
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
 }

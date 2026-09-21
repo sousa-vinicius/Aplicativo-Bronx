@@ -63,7 +63,7 @@ export default function Glp({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="app-sticky-header bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-4">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-700 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@ export default function Glp({ onBack }: { onBack: () => void }) {
       )}
 
       {saving && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+        <div className="app-fixed-bottom fixed left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
           Salvando...
         </div>
       )}
