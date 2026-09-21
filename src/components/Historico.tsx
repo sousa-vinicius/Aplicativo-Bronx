@@ -2,6 +2,7 @@ import { useState } from "react"
 import type { FleetRecord } from "../types"
 import { fmt } from "../utils"
 import { exportCSV, exportPDF } from "../lib/frotaExport"
+import { fetchFrotaRecordPhotos } from "../lib/frotaApi"
 import { BackBtn, CondBadge, FuelPip, inputCls, Lightbox } from "./ui"
 
 export function Historico({ records, onBack }: { records: FleetRecord[]; onBack: () => void }) {
@@ -11,6 +12,24 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
   const [dateTo, setDateTo] = useState("")
   const [expanded, setExpanded] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [photosById, setPhotosById] = useState<Record<string, { checkoutPhotos: string[]; returnPhotos: string[] }>>({})
+  const [loadingPhotosId, setLoadingPhotosId] = useState<string | null>(null)
+
+  async function toggleExpand(rec: FleetRecord) {
+    const willOpen = expanded !== rec.id
+    setExpanded(willOpen ? rec.id : null)
+    if (willOpen && !photosById[rec.id]) {
+      setLoadingPhotosId(rec.id)
+      try {
+        const photos = await fetchFrotaRecordPhotos(rec.id)
+        setPhotosById((prev) => ({ ...prev, [rec.id]: photos }))
+      } catch {
+        // Se falhar, só não mostra fotos — o resto do registro continua visível.
+      } finally {
+        setLoadingPhotosId(null)
+      }
+    }
+  }
 
   const vehicleOptions = Array.from(new Set(records.map((r) => r.vehicle))).sort()
 
@@ -131,7 +150,7 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
             <div key={rec.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               <button
                 type="button"
-                onClick={() => setExpanded(isOpen ? null : rec.id)}
+                onClick={() => toggleExpand(rec)}
                 className="w-full text-left p-4 hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-start justify-between mb-2">
@@ -172,11 +191,14 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
                       {rec.observations}
                     </div>
                   )}
-                  {rec.checkoutPhotos.length > 0 && (
+                  {loadingPhotosId === rec.id && (
+                    <p className="text-xs text-slate-400">Carregando fotos...</p>
+                  )}
+                  {(photosById[rec.id]?.checkoutPhotos.length ?? 0) > 0 && (
                     <div>
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Fotos da saída</span>
                       <div className="flex gap-2 flex-wrap">
-                        {rec.checkoutPhotos.map((p, i) => (
+                        {photosById[rec.id].checkoutPhotos.map((p, i) => (
                           <button key={i} type="button" onClick={() => setPreview(p)}>
                             <img src={p} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
                           </button>
@@ -204,11 +226,11 @@ export function Historico({ records, onBack }: { records: FleetRecord[]; onBack:
                           {rec.returnObservations}
                         </div>
                       )}
-                      {rec.returnPhotos && rec.returnPhotos.length > 0 && (
+                      {(photosById[rec.id]?.returnPhotos.length ?? 0) > 0 && (
                         <div>
                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">Fotos da devolução</span>
                           <div className="flex gap-2 flex-wrap">
-                            {rec.returnPhotos.map((p, i) => (
+                            {photosById[rec.id].returnPhotos.map((p, i) => (
                               <button key={i} type="button" onClick={() => setPreview(p)}>
                                 <img src={p} className="w-20 h-20 object-cover rounded-xl border border-slate-200" alt="" />
                               </button>

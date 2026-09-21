@@ -27,12 +27,29 @@ function fromDb(row: any): FleetRecord {
 }
 
 export async function fetchFrotaRecords(): Promise<FleetRecord[]> {
+  // Não busca as colunas de fotos aqui — elas podem estar pesando muitos MB por
+  // registro e são a causa mais provável de timeout ao listar/filtrar o histórico.
+  // As fotos são carregadas sob demanda (fetchFrotaRecordPhotos) só quando o
+  // usuário abre um registro específico.
   const { data, error } = await supabase
     .from("frota_registros")
-    .select("*")
+    .select("id, vehicle, driver, departure_time, condition, fuel_level, route, observations, return_driver, return_time, return_condition, return_fuel_level, return_route, return_observations, status")
     .order("departure_time", { ascending: false })
   if (error) throw error
   return (data ?? []).map(fromDb)
+}
+
+export async function fetchFrotaRecordPhotos(id: string): Promise<{ checkoutPhotos: string[]; returnPhotos: string[] }> {
+  const { data, error } = await supabase
+    .from("frota_registros")
+    .select("checkout_photos, return_photos")
+    .eq("id", id)
+    .single()
+  if (error) throw error
+  return {
+    checkoutPhotos: data?.checkout_photos ?? [],
+    returnPhotos: data?.return_photos ?? [],
+  }
 }
 
 export async function insertFrotaSaida(

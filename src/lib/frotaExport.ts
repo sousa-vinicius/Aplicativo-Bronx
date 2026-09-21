@@ -84,11 +84,6 @@ export function exportPDF(records: FleetRecord[], filterLabel: string, filters: 
   const stamp = new Date().toLocaleString("pt-BR")
   const filename = buildReportFilename(records, filters)
 
-  const thumbs = (photos: string[] | undefined) =>
-    photos && photos.length > 0
-      ? `<div class="thumbs">${photos.map((p) => `<img src="${p}" class="thumb" />`).join("")}</div>`
-      : ""
-
   const rowsHtml = records.map((r) => `
     <tr>
       <td>${r.vehicle}</td>
@@ -97,7 +92,6 @@ export function exportPDF(records: FleetRecord[], filterLabel: string, filters: 
       <td>${r.condition} · ${r.fuelLevel}%${r.route ? `<br/><span class="muted">${r.route}</span>` : ""}</td>
       <td>${r.returnDriver ?? "—"}${r.returnTime ? `<br/><span class="muted">${fmt(r.returnTime)}</span>` : ""}</td>
       <td>${r.returnCondition ? `${r.returnCondition} · ${r.returnFuelLevel ?? 0}%` : "—"}${r.returnRoute ? `<br/><span class="muted">${r.returnRoute}</span>` : ""}</td>
-      <td>${thumbs(r.checkoutPhotos)}${thumbs(r.returnPhotos)}</td>
     </tr>
   `).join("")
 
@@ -114,8 +108,6 @@ export function exportPDF(records: FleetRecord[], filterLabel: string, filters: 
       th { text-align: left; background: #f1f5f9; padding: 8px 6px; border-bottom: 2px solid #cbd5e1; }
       td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
       .muted { color: #94a3b8; font-size: 10px; }
-      .thumbs { display: flex; flex-wrap: wrap; gap: 3px; max-width: 130px; }
-      .thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; border: 1px solid #e2e8f0; }
       footer { margin-top: 24px; font-size: 10px; color: #94a3b8; }
       @media print { body { padding: 12px; } tr { page-break-inside: avoid; } }
     </style>
@@ -124,9 +116,9 @@ export function exportPDF(records: FleetRecord[], filterLabel: string, filters: 
       <div class="sub">Filtro: ${filterLabel} · Gerado em ${stamp} · ${records.length} registro(s)</div>
       <table>
         <thead><tr>
-          <th>Veículo</th><th>Status</th><th>Saída</th><th>Cond. Saída</th><th>Devolução</th><th>Cond. Devolução</th><th>Fotos</th>
+          <th>Veículo</th><th>Status</th><th>Saída</th><th>Cond. Saída</th><th>Devolução</th><th>Cond. Devolução</th>
         </tr></thead>
-        <tbody>${rowsHtml || `<tr><td colspan="7">Nenhum registro encontrado.</td></tr>`}</tbody>
+        <tbody>${rowsHtml || `<tr><td colspan="6">Nenhum registro encontrado.</td></tr>`}</tbody>
       </table>
       <footer>Bronx · Sistema de Gestão de Frotas</footer>
       <script>window.onload = () => { window.print(); }</script>
