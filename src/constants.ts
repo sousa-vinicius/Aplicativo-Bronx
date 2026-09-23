@@ -33,7 +33,7 @@ export const OBRAS = [
   "ANTHOLOGY",
   "APPLAUSE NEW HOME",
   "ARTESANO",
-  "AYA, LE PARC, VISTTA JK",
+  "AYA",
   "B GREAT BOSQUE DOS BURITIS",
   "BASILICA DIVINO PAI ETERNO",
   "BAUHAUS",
@@ -58,6 +58,7 @@ export const OBRAS = [
   "ILHAS DO CARIBE",
   "INFINITY BUSINESS",
   "INSPIRE VACA BRAVA",
+  "LE PARC",
   "LEGACY",
   "LOFT T7",
   "M CENTRAL PARK",
@@ -80,6 +81,7 @@ export const OBRAS = [
   "SINGAH",
   "STORYA",
   "VIGORE MARISTA",
+  "VISTTA JK",
   "WISH 37",
 ]
 
