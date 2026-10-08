@@ -28,6 +28,7 @@ export const FLEET = [
 
 // Lista fixa de obras/destinos.
 export const OBRAS = [
+  "AERO 17",
   "ALAMEDA AREIÃO",
   "AMBIENTE - TERRAL",
   "ANTHOLOGY",
